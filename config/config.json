@@ -1,0 +1,54 @@
+{
+    "TASK": {
+        "TARGET_BASE_URL": "http://192.168.1.1:8080/",
+        "USERNAME": "admin",
+        "PASSWORD": "123456",
+        "COOKIE": "mmwikissid=6aff0120aa3f367f2c5e69acb1842046; mmwikipassport=n8sckEYYgdC1h4iJgdgGgEgXhwrShzech7iGiFlHy41Di45JiAuxyda=",
+        "API": {
+            "login": {
+                "PATH": "/author/login",
+                "METHOD": "POST"
+            },
+            "serverStatus": {
+                "PATH": "/system/static/serverStatus",
+                "METHOD": "GET"
+            },
+            "document_getId": {
+                "PATH": "/document/getAllDocumentIdsInSpace",
+                "METHOD": "GET"
+            },
+            "document_index": {
+                "PATH": "/document/index",
+                "METHOD": "GET"
+            },
+            "page_modify": {
+                "PATH": "/page/modify",
+                "METHOD": "POST"
+            },
+            "image_upload": {
+                "PATH": "/image/upload",
+                "METHOD": "POST"
+            },
+            "document_save": {
+                "PATH": "/document/save",
+                "METHOD": "POST"
+            },
+            "document_sort": {
+                "PATH": "/document/SortDocuments",
+                "METHOD": "POST"
+            },
+            "document_moveDirectory": {
+                "PATH": "/document/MoveDirectory",
+                "METHOD": "POST"
+            },
+            "document_moveDirectory_all": {
+                "PATH": "/document/MoveDirectoryAll",
+                "METHOD": "POST"
+            },
+            "delete_all": {
+                "PATH": "/document/deleteAllDocumentIdsInSpace",
+                "METHOD": "POST"
+            }
+        }
+    }
+}
