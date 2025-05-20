@@ -1,8 +1,8 @@
 # -*- coding: UTF-8 -*-
 '''
 @Createtime: 2023/1/11 09:51
-@Updatetime: 2025/4/27 09:44
-@Version: 0.1.5
+@Updatetime: 2025/5/20 16:00
+@Version: 0.1.6
 @description: 识别md文档内图片格式
 @note:
     图片格式: 本地图片、网络图片、base64图片
@@ -103,17 +103,22 @@ def base64_decode_image(md_path_name, files_name, img_data, filename):
     
     return f"\n\n![]({image_name})\n\n"
 
-def download_pics_common(url, md_path_name, files_name, filename, proxy=None):
+def download_pics_common(url, md_path_name, files_name, filename, proxy=None, auth_header=None):
     """统一的图片下载处理函数"""
     def try_download(use_proxy=False):
         """尝试下载函数"""
         try:
+            s = requests.session()
+            
+            # 添加authorization头（如果提供）
+            if auth_header:
+                s.headers.update({'Authorization': auth_header})
+
             if use_proxy and proxy:
-                s = requests.session()
                 s.proxies = {'https': proxy}
                 response = s.get(url, timeout=(5, 15), verify=False)
             else:
-                response = requests.get(url, timeout=(5, 15), verify=False)
+                response = s.get(url, timeout=(5, 15), verify=False)
             
             if response.status_code == 200:
                 if ".mp4" in url:
@@ -160,9 +165,9 @@ def download_pics_common(url, md_path_name, files_name, filename, proxy=None):
         logger.error(f"[-] {files_name} 下载过程发生错误: {url}, 错误: {str(e)}")
         return url
 
-def intern_save_img(md_path_name, files_name, img_data, filename, proxy):
+def intern_save_img(md_path_name, files_name, img_data, filename, proxy, auth_header=None):
     """处理网络图片下载"""
-    path = download_pics_common(img_data, md_path_name, files_name, filename, proxy)
+    path = download_pics_common(img_data, md_path_name, files_name, filename, proxy, auth_header)
     return f"\n\n![]({path})\n\n"
 
 def local_img_path(md_path_name, files_name, img_data):
@@ -266,7 +271,7 @@ def local_save_img(md_path_name, files_name, img_data, filename):
         logger.error(f"[-] {files_name} 处理图片时发生错误: {str(e)}")
         return f"\n\n![]({img_data})\n\n"
 
-def Pictures_processing(md_path_name, files_name, img_path, filename, count, base64_images, intern_imgs, local_imgs, proxy):
+def Pictures_processing(md_path_name, files_name, img_path, filename, count, base64_images, intern_imgs, local_imgs, proxy, auth_header=None):
     """
     识别图片格式
     本地图片、网络图片、base64图片
@@ -279,7 +284,7 @@ def Pictures_processing(md_path_name, files_name, img_path, filename, count, bas
     elif "http://" in img_path or "https://" in img_path:
         logger.info(f"[*] {files_name} {count} : 存在网络图片,需转换为本地")
         img_path = unquote(img_path)
-        datas = intern_save_img(md_path_name, files_name, img_path, filename, proxy)
+        datas = intern_save_img(md_path_name, files_name, img_path, filename, proxy, auth_header)
         if datas != None:
             intern_imgs.append(datas)
     else:
@@ -297,7 +302,7 @@ def update_md(markdown_text, files_name):
     with open(files_name, 'w', encoding='utf-8', errors='ignore') as file3:
         file3.write(markdown_test_data)
 
-def md_img_readline(md_path_name, files_name, datas, img_data, document_name, count, base64_images, intern_imgs, local_imgs, proxy):
+def md_img_readline(md_path_name, files_name, datas, img_data, document_name, count, base64_images, intern_imgs, local_imgs, proxy, auth_header=None):
     """
     处理Markdown中的图片链接
     
@@ -326,7 +331,7 @@ def md_img_readline(md_path_name, files_name, datas, img_data, document_name, co
     # 处理图片
     result_data, base64_images, intern_imgs, local_imgs = Pictures_processing(
         md_path_name, files_name, img_url, document_name, count, 
-        base64_images, intern_imgs, local_imgs, proxy
+        base64_images, intern_imgs, local_imgs, proxy, auth_header
     )
     
     # 只有当处理结果不同于原始数据时才更新
@@ -335,7 +340,7 @@ def md_img_readline(md_path_name, files_name, datas, img_data, document_name, co
     
     return datas
 
-def images_save(md_path_name, files_name, proxy, write_file=False):
+def images_save(md_path_name, files_name, proxy, write_file=False, auth_header=None):
     """
     处理MD文件中的图片，将其保存到本地
     
@@ -401,7 +406,7 @@ def images_save(md_path_name, files_name, proxy, write_file=False):
                         line = md_img_readline(
                             md_path_name, files_name, line, img_data, 
                             document_name, count, base64_images, 
-                            intern_imgs, local_imgs, proxy
+                            intern_imgs, local_imgs, proxy, auth_header
                         )
                         count += 1
                 # 将合成后的本地路径添加到列表
@@ -461,7 +466,7 @@ def normalize_filename(filename):
     name = name.strip('_')
     
     return name + ext
-def process_directory(path, proxy, thread_count, write_file=False):
+def process_directory(path, proxy, thread_count, write_file=False, auth_header=None):
     """递归处理目录及其子目录中的所有文件"""
     all_files = []
     renamed_files = []
@@ -516,7 +521,7 @@ def process_directory(path, proxy, thread_count, write_file=False):
         def process_file(file_path):
             nonlocal completed_files
             try:
-                images_save(path, file_path, proxy, write_file)
+                images_save(path, file_path, proxy, write_file, auth_header)
             except Exception as exc:
                 logger.error(f"[-] 处理文件时发生错误: {exc}")
             finally:
@@ -568,6 +573,7 @@ if __name__ == '__main__':
     parser.add_argument("-t", dest="thread", type=int, default="1", help="请输入线程")
     parser.add_argument("-proxy", dest="proxy_name", default="", help="请输入socks5 ip及端口,eg socks5://127.0.0.1:7890")
     parser.add_argument("-w", "--write", dest="write_file", action="store_true", help="是否将修改写入文件")
+    parser.add_argument("-auth", dest="auth_header", default="", help="请输入authorization头信息")
     
     try:
         args = parser.parse_args()
@@ -577,7 +583,7 @@ if __name__ == '__main__':
                 logger.error(f"指定的路径不存在: {args.path_name}")
                 sys.exit(1)
             try:
-                process_directory(args.path_name, args.proxy_name, int(args.thread), args.write_file)
+                process_directory(args.path_name, args.proxy_name, args.thread, args.write_file, args.auth_header)
             except KeyboardInterrupt:
                 logger.info("\n[!] 程序已终止")
                 sys.exit(0)
