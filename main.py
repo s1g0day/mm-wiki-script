@@ -3,8 +3,8 @@
 @Filename: main.py
 @Author: s1g0day
 @Create Date: 2025-03-21 15:20
-@Update Date: 2025-04-30 10:00
-@Version: 0.0.11
+@Update Date: 2025-05-20 18:36
+@Version: 0.0.12
 @Description: MM-Wiki文档自动上传工具
 @Note:
     文件类型: md
@@ -32,6 +32,7 @@ from modules.Modify_Image import modify_image_path
 from modules.Document_Delete_all import delete_all_documents
 from modules.Document_MoveDirectory import Move_Directory
 from modules.Document_GetId import Get_document_id
+from modules.Document_CheckParent import Check_Parent_id
 from modules.Document_Sort import Sort_Documents
 from modules.Getimg_Isalive import batch_check_images
 
@@ -100,7 +101,32 @@ class ThreatbookAuto:
             logger.info(f"总进度: {self.processed_files}/{self.total_md_files} ({progress:.1f}%)")
         except Exception as e:
             logger.error(f"任务执行失败: {str(e)}")
-    
+
+    def process_file(self, path_name, file_path, parent_id, space_id, current_dir_name):
+        """处理单个文件的函数，用于多线程调用"""
+        file_name = os.path.basename(file_path)
+        file_ext = os.path.splitext(file_name)[1].lower()
+        
+        if file_ext == '.md':
+            document_name = os.path.splitext(file_name)[0]
+            
+            # 跳过与目录名相同的md文件
+            # if document_name.lower() == current_dir_name.lower():
+                # logger.info(f"跳过文件: {file_path}")
+                # return
+            # 跳过readme文件
+            if "readme" in document_name.lower():
+                logger.info(f"跳过文件: {file_path}")
+                return
+            document_type = '1'  # 文件类型
+            # 创建文档
+            document_id = create_document(self.mmwiki_url, self.headers, self.config.TASK.API.document_save.PATH, parent_id, space_id, document_name, document_type, logger)
+            if document_id:
+                # 处理文件内容和图片
+                file_content = modify_image_path(self.mmwiki_url, self.headers, self.config.TASK.API.image_upload.PATH, space_id, document_id, path_name, file_path, logger)
+                if file_content:
+                    page_modify(self.mmwiki_url, self.headers, self.config.TASK.API.page_modify.PATH, document_id, document_name, file_content, logger)
+
     def process_directory(self, path_name, parent_id, space_id):
         """递归处理目录及文件"""
         # 首次运行时计算总MD文件数
@@ -229,7 +255,9 @@ class ThreatbookAuto:
                 else:
                     logger.error("登录失败，请检查配置文件或网络连接")
             elif mode == "add":
-                self.process_directory(path_name, parent_id, space_id)
+                # 验证目录ID和空间ID
+                if Check_Parent_id(self.mmwiki_url, self.headers, self.config.TASK.API.document_check.PATH, parent_id, space_id, logger):
+                    self.process_directory(path_name, parent_id, space_id)
             elif mode == "delall":
                 delete_all_documents(self.mmwiki_url, self.headers, self.config.TASK.API.delete_all.PATH, parent_id, space_id, delete_parent, logger)
             elif mode == "move":

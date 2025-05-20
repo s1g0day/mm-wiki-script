@@ -17,6 +17,10 @@
                 "PATH": "/document/getAllDocumentIdsInSpace",
                 "METHOD": "GET"
             },
+            "document_check": {
+                "PATH": "/document/checkParent",
+                "METHOD": "GET"
+            },
             "document_index": {
                 "PATH": "/document/index",
                 "METHOD": "GET"
