@@ -169,6 +169,9 @@ python3 .\Identify_pictures.py -path ”d:\123“ -proxy 127.0.0.1:7890 -t 10
 
 # 标准使用 加入-w参数，用来将图片修改后的数据同步到md文档
 python3 .\Identify_pictures.py -path ”d:\123“ -proxy 127.0.0.1:7890 -w
+
+# 添加authorization头,用于认证网络下载
+python3 .\Identify_pictures.py -path ”d:\123“ -proxy 127.0.0.1:7890 -w -auth "Bearer your_token_here"
 ```
 
 ### wiki主程序
